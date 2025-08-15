@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Translation App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 Machine Translation App</h1>
+            <p>Translate English text to French using AI</p>
+        </header>
+
+        <main>
+            <div class="translation-container">
+                <div class="input-section">
+                    <label for="input-text">Enter English Text:</label>
+                    <textarea 
+                        id="input-text" 
+                        placeholder="Type your English text here..."
+                        rows="6"
+                    ></textarea>
+                    <button id="translate-btn" onclick="translateText()">
+                        <span id="btn-text">Translate</span>
+                        <span id="loading" class="loading hidden">Translating...</span>
+                    </button>
+                </div>
+
+                <div class="output-section">
+                    <label for="output-text">French Translation:</label>
+                    <div id="output-text" class="output-box">
+                        Your translation will appear here...
+                    </div>
+                </div>
+            </div>
+
+            <div class="examples">
+                <h3>Try these examples:</h3>
+                <div class="example-buttons">
+                    <button class="example-btn" onclick="setExample('Hello, how are you today?')">
+                        Basic Greeting
+                    </button>
+                    <button class="example-btn" onclick="setExample('The weather is beautiful and I am going for a walk.')">
+                        Daily Activity
+                    </button>
+                    <button class="example-btn" onclick="setExample('Machine learning is transforming the world.')">
+                        Technology
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Built with Flask, Docker & Hugging Face Transformers</p>
+        </footer>
+    </div>
+
+    <script>
+        async function translateText() {
+            const inputText = document.getElementById('input-text').value.trim();
+            const outputElement = document.getElementById('output-text');
+            const translateBtn = document.getElementById('translate-btn');
+            const btnText = document.getElementById('btn-text');
+            const loading = document.getElementById('loading');
+
+            if (!inputText) {
+                alert('Please enter some text to translate!');
+                return;
+            }
+
+            // Show loading state
+            translateBtn.disabled = true;
+            btnText.classList.add('hidden');
+            loading.classList.remove('hidden');
+            outputElement.textContent = 'Translating...';
+
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: inputText })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    outputElement.innerHTML = `
+                        <div class="translation-result">
+                            <p><strong>French:</strong> ${data.translated_text}</p>
+                        </div>
+                    `;
+                } else {
+                    outputElement.innerHTML = `
+                        <div class="error">
+                            Error: ${data.error || 'Translation failed'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                outputElement.innerHTML = `
+                    <div class="error">
+                        Network error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Reset button state
+                translateBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+            }
+        }
+
+        function setExample(text) {
+            document.getElementById('input-text').value = text;
+        }
+
+        // Allow Enter key to trigger translation
+        document.getElementById('input-text').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                translateText();
+            }
+        });
+    </script>
+</body>
+</html>
